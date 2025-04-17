@@ -1,0 +1,150 @@
+#include <iostream>
+#include <map>
+#include <string>
+#include <vector>
+#include "Property.hpp"
+
+void foo(std::string& s) {}
+
+void foo(const std::string& s) {}
+
+void bar(std::string& s) {}
+
+auto qaz(const property<std::string>& prop)
+{
+    auto tmp = property<std::string>{ prop };
+    return tmp;
+}
+
+int main()
+{
+    using namespace std::string_literals;
+
+    auto update_proc1 = [](const property<std::string>& p, void* ctx) { std::cout << &p << " / " << ctx << " updated with " << p << std::endl; };
+    auto update_proc2 = [](const property<int>& p, void* ctx) { std::cout << &p << " / " << ctx << " updated with " << p << std::endl; };
+    auto update_proc3 = [](const property<float>& p, void* ctx) { std::cout << &p << " / " << ctx << " updated with " << p << std::endl; };
+
+    auto p1 = make_property<std::string>("C++11"); // property<std::string>{ "C++11" };
+    auto p2 = make_property(p1); // property<std::string>{ p1 };
+    auto p3 = make_property(std::move(p2)); // std::move(p2);
+
+    p2 = qaz("C++11");
+    p2 = qaz("C++11"s);
+
+    auto s1 = "C++14"s;
+    auto s2 = "C++17"s;
+    auto p4 = make_property(s1); // property<std::string>{ s1 };
+    auto p5 = make_property(std::move(s2)); // property<std::string>{ std::move(s2) };
+    auto p6 = property<std::string>{ "C++20"s };
+    auto p7 = property<std::string>{ (const std::string&)std::string{ "C++23" } };
+
+    p1.set_update_proc(update_proc1, (void*)0x11111111);
+    p2.set_update_proc(update_proc1, (void*)0x22222222);
+    p3.set_update_proc(update_proc1, (void*)0x33333333);
+    p4.set_update_proc(update_proc1, (void*)0x44444444);
+
+    p1 = p6;
+    p2 = std::move(p7);
+
+    p3 = s1;
+    p4 = std::move(s1);
+
+    foo(p3); // OK! implicit user-defined type conversion returns CONST reference!
+    foo(std::as_const(p3));
+    foo(as_volatile(p3));
+
+    foo(*p3); // WARNING! explicit call to operator* returns NON-const reference!
+    foo(*std::as_const(p3));
+    foo(*as_volatile(p3));
+
+    foo(p4.get()); // WARNING! explicit call to .get() returns NON-const reference!
+    foo(std::as_const(p4).get());
+    foo(as_volatile(p4).get());
+
+    //bar(p4); // ERROR! implicit conversion to non-const reference is forbiden!
+    bar(p4.get()); // OK! explicit call to .get() to convert to non-const reference is allowed!
+    bar(*p4); // OK! explicit call to .operator* to convert to non-const reference is allowed!
+    bar(static_cast<std::string&>(p4)); // OK! explicit conversion to non-const reference is allowed!
+
+    std::string s3 = p3;
+    std::string s4 = std::move(p3);
+
+    [[maybe_unused]] auto tmp1 = p1->size();
+    [[maybe_unused]] auto tmp2 = std::as_const(p2)->length();
+    [[maybe_unused]] auto tmp3 = as_volatile(p3)->c_str();
+
+    auto r1 = p1 == p2;
+    auto r2 = p1 == p1;
+    auto r3 = p1 == "C++20";
+    auto r4 = "C++20" == p1;
+    auto r5 = p1 == "C++20"s;
+    auto r6 = "C++20"s == p1;
+
+    auto p8 = make_property(1); // property<int>{ 1 };
+    auto p9 = make_property(1.f); // property<float>{ 1.f };
+
+    p8.set_update_proc(update_proc2, (void*)0x88888888);
+    p9.set_update_proc(update_proc3, (void*)0x99999999);
+
+    //std::cin >> p8;
+    //std::wcin >> p9;
+
+    p8 = 2;
+    p8 = 2.f;
+    p9 = 3;
+    p9 = 3.f;
+    p8 = p9;
+    p9 = p8;
+    p8 = (int)p9;
+    p9 = p9;
+
+    p8 += p8;
+    p9 += p8;
+    p8 += p9;
+    p8 += 1;
+
+    auto r7 = p8 < p9;
+    auto r8 = p8 == 2;
+    auto r9 = 3 == p9;
+    auto r10 = p1 == p2;
+    auto r11 = p1 > p2;
+
+    auto p10 = +p8;
+    auto p11 = -p9;
+    auto p12 = p8 + p8;
+    auto p13 = p8 - p9;
+    auto p14 = p8 * p9;
+    auto p15 = p8 / p9;
+    auto p16 = p8 % p8;
+
+    auto p17 = ~p8;
+    auto p19 = p8 & p8;
+    auto p20 = p8 | p8;
+    auto p21 = p8 ^ p8;
+    auto p22 = p8 << p8;
+    auto p23 = p8 >> p8;
+
+    10 + p10;
+    p10 + 10;
+
+    auto v1 = property<std::vector<int>>{ 1, 2, 3, 4, 5 };
+    auto v2 = make_property(std::vector<int>{ 1, 2, 3, 4, 5 });
+    [[maybe_unused]] auto tmp4 = v1->size();
+    v1[0] = 666;
+    auto i1 = v1[0];
+    auto i2 = std::as_const(v1)[0];
+    auto i3 = as_volatile(v1)[0];
+
+    auto it1 = v1.begin();
+    decltype(auto) it2 = v2.begin();
+
+    for (auto i : v1) { std::cout << i << std::endl; }
+
+    auto m1 = property<std::map<int, int>>(std::map<int, int>{ { 1, 1 }, { 2, 2 }, { 3, 3 } });
+    auto m2 = make_property(std::map<int, int>{ { 1, 1 }, { 2, 2 }, { 3, 3 } });
+    m1[1] = 11;
+    m1[2] = 22;
+    m1[3] = 33;
+
+    for (auto i : m1) { std::cout << i.first << " -> " << i.second << std::endl; }
+}
