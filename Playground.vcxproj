@@ -155,7 +155,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Playground.cpp" />
     <ClCompile Include="Property.cpp" />
   </ItemGroup>
   <ItemGroup>
