@@ -5,6 +5,7 @@
 #include <initializer_list>
 #include <istream>
 #include <iterator>
+#include <memory>
 #include <ostream>
 #include <type_traits>
 #include <unordered_map>
@@ -15,6 +16,19 @@
 template<typename T> concept non_pointer = (not std::is_pointer_v<T>);
 template<typename T> concept non_reference = (not std::is_reference_v<T>);
 template<typename T> concept basic_property_type = (non_pointer<T> and non_reference<T>);
+
+
+
+template<typename PT> concept std_smart_pointer = requires (PT p)
+{
+    typename PT::element_type;
+    { static_cast<bool>(p) };
+}
+and std::disjunction_v<
+    std::is_same<PT, std::shared_ptr<typename PT::element_type>>,
+    std::is_same<PT, std::unique_ptr<typename PT::element_type>>,
+    std::is_same<PT, std::shared_ptr<typename PT::element_type[]>>,
+    std::is_same<PT, std::unique_ptr<typename PT::element_type[]>>>;
 
 
 
@@ -194,40 +208,81 @@ public:
     operator const_reference () const { return P::get(); }
     operator const_reference () const volatile { return P::get(); }
 
+
+
+    template<typename PT = T> requires (not std_smart_pointer<PT>)
     [[nodiscard]] reference operator * () { return P::get(); }
+
+    template<typename PT = T> requires (not std_smart_pointer<PT>)
     [[nodiscard]] const_reference operator * () const { return P::get(); }
+
+    template<typename PT = T> requires (not std_smart_pointer<PT>)
     [[nodiscard]] const_reference operator * () const volatile { return P::get(); }
 
+    template<typename PT = T> requires (not std_smart_pointer<PT>)
     pointer operator -> () { return &P::get(); }
+
+    template<typename PT = T> requires (not std_smart_pointer<PT>)
     const_pointer operator -> () const { return &P::get(); }
+
+    template<typename PT = T> requires (not std_smart_pointer<PT>)
     const_pointer operator -> () const volatile { return &P::get(); }
 
-    template<typename U> requires std_container<T>
+
+
+    template<typename PT = T> requires (std_smart_pointer<PT>)
+    explicit operator bool() const noexcept { return static_cast<bool>(P::get()); }
+
+    template<typename PT = T> requires (std_smart_pointer<PT>)
+    [[nodiscard]] PT::element_type& operator * () { return *P::get(); }
+
+    template<typename PT = T> requires (std_smart_pointer<PT>)
+    [[nodiscard]] const PT::element_type& operator * () const { return *P::get(); }
+
+    template<typename PT = T> requires (std_smart_pointer<PT>)
+    [[nodiscard]] const PT::element_type& operator * () const volatile { return *P::get(); }
+
+    template<typename PT = T> requires (std_smart_pointer<PT>)
+    reference operator -> () { return P::get(); }
+
+    template<typename PT = T> requires (std_smart_pointer<PT>)
+    const_reference operator -> () const { return P::get(); }
+
+    template<typename PT = T> requires (std_smart_pointer<PT>)
+    const_reference operator -> () const volatile { return P::get(); }
+
+
+
+    template<typename U> requires (std_smart_pointer<T> or std_container<T>)
     [[nodiscard]] decltype(auto) operator [] (U&& index) { return P::get()[std::forward<U>(index)]; }
 
-    template<typename U> requires std_container<T>
+    template<typename U> requires (std_smart_pointer<T> or std_container<T>)
     [[nodiscard]] decltype(auto) operator [] (U&& index) const { return P::get()[std::forward<U>(index)]; }
 
-    template<typename U> requires std_container<T>
+    template<typename U> requires (std_smart_pointer<T> or std_container<T>)
     [[nodiscard]] decltype(auto) operator [] (U&& index) const volatile { return P::get()[std::forward<U>(index)]; }
 
-    template<typename C = T> requires std_container<C>
+
+
+    template<typename C = T> requires (std_container<C>)
     [[nodiscard]] decltype(auto) begin() { return P::get().begin(); }
 
-    template<typename C = T> requires std_container<C>
+    template<typename C = T> requires (std_container<C>)
     [[nodiscard]] decltype(auto) end() { return P::get().end(); }
 
-    template<typename C = T> requires std_container<C>
+    template<typename C = T> requires (std_container<C>)
     [[nodiscard]] decltype(auto) begin() const { return P::get().begin(); }
 
-    template<typename C = T> requires std_container<C>
+    template<typename C = T> requires (std_container<C>)
     [[nodiscard]] decltype(auto) end() const { return P::get().end(); }
 
-    template<typename C = T> requires std_container<C>
+    template<typename C = T> requires (std_container<C>)
     [[nodiscard]] decltype(auto) cbegin() { return P::get().cbegin(); }
 
-    template<typename C = T> requires std_container<C>
+    template<typename C = T> requires (std_container<C>)
     [[nodiscard]] decltype(auto) cend() { return P::get().cend(); }
+
+
 
     template<typename M> requires (std::invocable<M, basic_property, void*>)
     void set_update_proc(M&& proc, void* ctx) { k_update_proc_map.insert_or_assign(this, std::make_pair(std::forward<M>(proc), ctx)); }
@@ -323,6 +378,26 @@ requires (std::constructible_from<T, std::initializer_list<U>>)
 {
     using V = std::remove_cvref_t<T>;
     return basic_property<V, P>{ l };
+}
+
+
+
+template<typename T, typename P>
+[[nodiscard]] decltype(auto) strip(basic_property<T, P>& prop)
+{
+    return static_cast<T&>(prop);
+}
+
+template<typename T, typename P>
+[[nodiscard]] decltype(auto) strip(const basic_property<T, P>& prop)
+{
+    return static_cast<const T&>(prop);
+}
+
+template<typename T, typename P>
+[[nodiscard]] decltype(auto) strip(const volatile basic_property<T, P>& prop)
+{
+    return static_cast<const T&>(prop);
 }
 
 

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include "Property.hpp"
@@ -52,18 +53,21 @@ int main()
     foo(p3); // OK! implicit user-defined type conversion returns CONST reference!
     foo(std::as_const(p3));
     foo(as_volatile(p3));
+    foo(strip(std::as_const(p3)));
+    foo(strip(as_volatile(p3)));
 
     foo(*p3); // WARNING! explicit call to operator* returns NON-const reference!
     foo(*std::as_const(p3));
     foo(*as_volatile(p3));
 
-    foo(p4.get()); // WARNING! explicit call to .get() returns NON-const reference!
+    foo(p4.get()); // WARNING! explicit call to get() returns NON-const reference!
     foo(std::as_const(p4).get());
     foo(as_volatile(p4).get());
 
     //bar(p4); // ERROR! implicit conversion to non-const reference is forbiden!
-    bar(p4.get()); // OK! explicit call to .get() to convert to non-const reference is allowed!
-    bar(*p4); // OK! explicit call to .operator* to convert to non-const reference is allowed!
+    bar(p4.get()); // OK! explicit call to get() to convert to non-const reference is allowed!
+    bar(*p4); // OK! explicit call to operator* to convert to non-const reference is allowed!
+    bar(strip(p4)); // OK! explicit call to strip is allowed!
     bar(static_cast<std::string&>(p4)); // OK! explicit conversion to non-const reference is allowed!
 
     std::string s3 = p3;
@@ -124,8 +128,8 @@ int main()
     auto p22 = p8 << p8;
     auto p23 = p8 >> p8;
 
-    10 + p10;
-    p10 + 10;
+    auto p24 = 10 + p10;
+    auto p25 = p10 + 10;
 
     auto v1 = property<std::vector<int>>{ 1, 2, 3, 4, 5 };
     auto v2 = make_property(std::vector<int>{ 1, 2, 3, 4, 5 });
@@ -147,4 +151,36 @@ int main()
     m1[3] = 33;
 
     for (auto i : m1) { std::cout << i.first << " -> " << i.second << std::endl; }
+
+    auto ptr1 = make_property(std::make_shared<std::string>("C++23"));
+    auto ptr2 = make_property(std::make_unique<std::string>("C++26"));
+    auto ptr3 = make_property(std::make_shared<std::string>("C++1998"));
+    auto ptr4 = make_property(std::make_unique<std::string>("C++2001"));
+    auto ptr5 = make_property(std::make_shared<int[]>(3));
+    auto ptr6 = make_property(std::make_shared<int[]>(3));
+
+    ptr5[0] = ptr6[0] = 111;
+    ptr5[1] = ptr6[1] = 222;
+    ptr5[2] = ptr6[2] = 333;
+
+    strip(ptr3).reset();
+    strip(ptr4).release();
+
+    strip(std::as_const(ptr3)).use_count();
+    strip(as_volatile(ptr4)).get_deleter();
+
+    strip(ptr5)[2] = strip(ptr6)[2] = -1;
+
+    ptr1->length();
+    (*ptr1).length();
+
+    ptr2->size();
+    (*ptr2).size();
+
+    if (ptr1) std::cout << "not null" << std::endl;
+    if (ptr2) std::cout << "not null" << std::endl;
+    if (!ptr3) std::cout << "null" << std::endl;
+    if (!ptr4) std::cout << "null" << std::endl;
+
+    for (auto i = 0; i < 3; ++i) std::cout << ptr5[i] << ", " << ptr6[i] << std::endl;
 }
