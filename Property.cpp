@@ -85,7 +85,9 @@ int main()
     auto r6 = "C++20"s == p1;
 
     auto p8 = make_property(1); // property<int>{ 1 };
+    auto p8_2 = make_property<float>(1); // property<float>{ 1 };
     auto p9 = make_property(1.f); // property<float>{ 1.f };
+    auto p9_2 = make_property<int>(1.f); // property<int>{ 1.f };
 
     p8.set_update_proc(update_proc2, (void*)0x88888888);
     p9.set_update_proc(update_proc3, (void*)0x99999999);
@@ -183,4 +185,20 @@ int main()
     if (!ptr4) std::cout << "null" << std::endl;
 
     for (auto i = 0; i < 3; ++i) std::cout << ptr5[i] << ", " << ptr6[i] << std::endl;
+
+    struct S { int x, y, z; };
+    struct U : S {};
+
+    auto ss = S{ 1, 2, 3 };
+    auto uu = U{ 4, 5, 6 };
+
+    auto ps1 = make_property<S>(1, 2, 3);
+    auto ps2 = make_property(ss);
+    auto ps3 = make_property(S{ 4, 5, 6 });
+
+    auto ps5 = make_property<S>(uu);
+    auto ps6 = make_property<S>(U{ 4, 5, 6 });
+
+    auto ps8 = property<std::string>(10, '!');
+    auto ps9 = make_property<std::string>(10, '!');
 }

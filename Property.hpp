@@ -68,19 +68,21 @@ struct basic_property_policy
     using const_pointer = const value_type*;
 
     basic_property_policy() = default;
-    basic_property_policy(const basic_property_policy& other) : m_value{ other.get() } {}
-    basic_property_policy(basic_property_policy&& other) noexcept : m_value{ std::move(other.get()) } {}
+    basic_property_policy(const basic_property_policy& other) : m_value(other.get()) {}
+    basic_property_policy(basic_property_policy&& other) noexcept : m_value(std::move(other.get())) {}
     ~basic_property_policy() noexcept = default;
 
-    basic_property_policy(const_reference value) : m_value{ value } {}
-    basic_property_policy(rvalue_reference value) : m_value{ std::move(value) } {}
+    basic_property_policy(const_reference value) : m_value(value) {}
+    basic_property_policy(rvalue_reference value) : m_value(std::move(value)) {}
 
-    template<typename... Args> requires (std::constructible_from<T, Args...>
-    and not std::same_as<T, std::remove_cvref_t<Args>...> and not std::same_as<basic_property_policy, std::remove_cvref_t<Args>...>)
-    basic_property_policy(Args&&... args) : m_value{ std::forward<Args>(args)... } {}
+    template<typename U> requires (std::convertible_to<U, T>)
+    basic_property_policy(U&& value) : m_value(static_cast<T>(std::forward<U>(value))) {}
+
+    template<typename... Args> requires (std::constructible_from<T, Args...>)
+    basic_property_policy(Args&&... args) : m_value(std::forward<Args>(args)...) {}
 
     template<typename U> requires (std::constructible_from<T, std::initializer_list<U>>)
-    basic_property_policy(std::initializer_list<U> l) : m_value{ l } {}
+    basic_property_policy(std::initializer_list<U> l) : m_value(l) {}
 
     [[nodiscard]] reference get() { return m_value; }
     [[nodiscard]] const_reference get() const { return m_value; }
@@ -114,15 +116,17 @@ public:
     basic_property(basic_property&&) noexcept = default;
     ~basic_property() noexcept { clear_update_proc(); }
 
-    basic_property(const_reference value) : P{ value } {}
-    basic_property(rvalue_reference value) : P{ std::move(value) } {}
+    basic_property(const_reference value) : P(value) {}
+    basic_property(rvalue_reference value) : P(std::move(value)) {}
 
-    template<typename... Args> requires (std::constructible_from<T, Args...>
-    and not std::same_as<T, std::remove_cvref_t<Args>...> and not std::same_as<basic_property, std::remove_cvref_t<Args>...>)
-    basic_property(Args&&... args) : P{ std::forward<Args>(args)... } {}
+    template<typename U> requires (std::convertible_to<U, T>)
+    basic_property(U&& value) : P(std::forward<U>(value)) {}
+
+    template<typename... Args> requires (std::constructible_from<T, Args...>)
+    basic_property(Args&&... args) : P(std::forward<Args>(args)...) {}
 
     template<typename U> requires (std::constructible_from<T, std::initializer_list<U>>)
-    basic_property(std::initializer_list<U> l) : P{ l } {}
+    basic_property(std::initializer_list<U> l) : P(l) {}
 
     basic_property& operator = (const basic_property& other)
     {
@@ -337,39 +341,47 @@ private:
 
 
 template<basic_property_type T, typename P = basic_property_policy<T>>
-[[nodiscard]] auto make_property(const T& value)
-{
-    using U = std::remove_cvref_t<T>;
-    return basic_property<U, P>{ value };
-}
-
-template<basic_property_type T, typename P = basic_property_policy<T>>
-[[nodiscard]] auto make_property(T&& value)
-{
-    using U = std::remove_cvref_t<T>;
-    return basic_property<U, P>{ std::move(value) };
-}
-
-template<basic_property_type T, typename P = basic_property_policy<T>>
 [[nodiscard]] auto make_property(const basic_property<T, P>& prop)
 {
     using U = std::remove_cvref_t<T>;
-    return basic_property<U, P>{ prop };
+    return basic_property<U, P>(prop);
 }
 
 template<basic_property_type T, typename P = basic_property_policy<T>>
 [[nodiscard]] auto make_property(basic_property<T, P>&& prop)
 {
     using U = std::remove_cvref_t<T>;
-    return basic_property<U, P>{ std::move(prop) };
+    return basic_property<U, P>(std::move(prop));
+}
+
+template<basic_property_type T, typename P = basic_property_policy<T>>
+[[nodiscard]] auto make_property(const T& value)
+{
+    using U = std::remove_cvref_t<T>;
+    return basic_property<U, P>(value);
+}
+
+template<basic_property_type T, typename P = basic_property_policy<T>>
+[[nodiscard]] auto make_property(T&& value)
+{
+    using U = std::remove_cvref_t<T>;
+    return basic_property<U, P>(std::move(value));
+}
+
+template<basic_property_type T, typename U, typename P = basic_property_policy<T>>
+requires (std::convertible_to<U, T>)
+[[nodiscard]] auto make_property(U&& value)
+{
+    using V = std::remove_cvref_t<T>;
+    return basic_property<V, P>(std::forward<U>(value));
 }
 
 template<basic_property_type T, typename... Args, typename P = basic_property_policy<T>>
-requires (std::constructible_from<T, Args...> and not std::same_as<T, std::remove_cvref_t<Args>...>)
+requires (std::constructible_from<T, Args...>)
 [[nodiscard]] auto make_property(Args&&... args)
 {
     using U = std::remove_cvref_t<T>;
-    return basic_property<U, P>{ std::forward<Args>(args)... };
+    return basic_property<U, P>(std::forward<Args>(args)...);
 }
 
 template<basic_property_type T, typename U, typename P = basic_property_policy<T>>
@@ -377,7 +389,7 @@ requires (std::constructible_from<T, std::initializer_list<U>>)
 [[nodiscard]] auto make_property(std::initializer_list<U> l)
 {
     using V = std::remove_cvref_t<T>;
-    return basic_property<V, P>{ l };
+    return basic_property<V, P>(l);
 }
 
 
