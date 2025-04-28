@@ -7,9 +7,11 @@
 #include <iterator>
 #include <memory>
 #include <ostream>
+#include <string>
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 
 
@@ -337,6 +339,17 @@ private:
         }
     }
 };
+
+
+
+basic_property(const char*) -> basic_property<std::string, basic_property_policy<std::string>>;
+basic_property(const wchar_t*) -> basic_property<std::wstring, basic_property_policy<std::wstring>>;
+
+template<typename T> basic_property(T*) -> basic_property<std::unique_ptr<T>, basic_property_policy<std::unique_ptr<T>>>;
+
+template<typename Iterator> basic_property(Iterator, Iterator) ->
+    basic_property<std::vector<typename std::iterator_traits<Iterator>::value_type>,
+    basic_property_policy<std::vector<typename std::iterator_traits<Iterator>::value_type>>>;
 
 
 

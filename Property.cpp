@@ -166,7 +166,7 @@ int main()
     ptr5[2] = ptr6[2] = 333;
 
     strip(ptr3).reset();
-    strip(ptr4).release();
+    delete strip(ptr4).release();
 
     strip(std::as_const(ptr3)).use_count();
     strip(as_volatile(ptr4)).get_deleter();
@@ -201,4 +201,18 @@ int main()
 
     auto ps8 = property<std::string>(10, '!');
     auto ps9 = make_property<std::string>(10, '!');
+
+    struct SS { ~SS() { std::cout << "~SS\n"; } };
+
+    auto dg1 = property{ "C++17" }; // property<std::string>
+    auto dg2 = property{ L"C++17" }; // property<std::wstring>
+    auto dg3 = property{ new int{ 17 } }; // property<std::unique_ptr<int>>
+    auto dg4 = property{ new SS }; // property<std::unique_ptr<SS>>
+    auto dg5 = property{ v1.begin(), v1.end() }; // property<std::vector<int>>
+    auto dg6 = property{ m1.begin(), m1.end() }; // property<std::vector<std::pair<int, int>>>
+
+    strip(dg3).reset();
+    strip(dg4).reset();
+
+    std::cout << "\nTHE END!\n";
 }
