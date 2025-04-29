@@ -217,6 +217,15 @@ public:
 
 
     template<typename PT = T> requires (not std_smart_pointer<PT>)
+    [[nodiscard]] pointer operator & () { return &P::get(); }
+
+    template<typename PT = T> requires (not std_smart_pointer<PT>)
+    [[nodiscard]] const_pointer operator & () const { return &P::get(); }
+
+    template<typename PT = T> requires (not std_smart_pointer<PT>)
+    [[nodiscard]] const_pointer operator & () const volatile { return &P::get(); }
+
+    template<typename PT = T> requires (not std_smart_pointer<PT>)
     [[nodiscard]] reference operator * () { return P::get(); }
 
     template<typename PT = T> requires (not std_smart_pointer<PT>)
@@ -238,6 +247,15 @@ public:
 
     template<typename PT = T> requires (std_smart_pointer<PT>)
     explicit operator bool() const noexcept { return static_cast<bool>(P::get()); }
+
+    template<typename PT = T> requires (std_smart_pointer<PT>)
+    [[nodiscard]] PT::element_type* operator & () { return P::get().get(); }
+
+    template<typename PT = T> requires (std_smart_pointer<PT>)
+    [[nodiscard]] const PT::element_type* operator & () const { return P::get().get(); }
+
+    template<typename PT = T> requires (std_smart_pointer<PT>)
+    [[nodiscard]] const PT::element_type* operator & () const volatile { return P::get().get(); }
 
     template<typename PT = T> requires (std_smart_pointer<PT>)
     [[nodiscard]] PT::element_type& operator * () { return *P::get(); }
@@ -403,6 +421,30 @@ requires (std::constructible_from<T, std::initializer_list<U>>)
 {
     using V = std::remove_cvref_t<T>;
     return basic_property<V, P>(l);
+}
+
+[[nodiscard]] auto make_property(const char* str)
+{
+    return basic_property(str);
+}
+
+[[nodiscard]] auto make_property(const wchar_t* str)
+{
+    return basic_property(str);
+}
+
+template<typename T>
+requires (std::is_pointer_v<T>)
+[[nodiscard]] auto make_property(T ptr)
+{
+    return basic_property(ptr);
+}
+
+template<typename Iterator>
+requires (std::input_iterator<Iterator>)
+[[nodiscard]] auto make_property(Iterator begin, Iterator end)
+{
+    return basic_property(begin, end);
 }
 
 

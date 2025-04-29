@@ -1,6 +1,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 #include "Property.hpp"
@@ -206,13 +207,34 @@ int main()
 
     auto dg1 = property{ "C++17" }; // property<std::string>
     auto dg2 = property{ L"C++17" }; // property<std::wstring>
-    auto dg3 = property{ new int{ 17 } }; // property<std::unique_ptr<int>>
-    auto dg4 = property{ new SS }; // property<std::unique_ptr<SS>>
-    auto dg5 = property{ v1.begin(), v1.end() }; // property<std::vector<int>>
-    auto dg6 = property{ m1.begin(), m1.end() }; // property<std::vector<std::pair<int, int>>>
 
-    strip(dg3).reset();
-    strip(dg4).reset();
+    auto dg3 = make_property("C++17"); // property<std::string>
+    auto dg4 = make_property(L"C++17"); // property<std::wstring>
+
+    auto dg5 = property{ new int{ 17 } }; // property<std::unique_ptr<int>>
+    auto dg6 = property{ new SS }; // property<std::unique_ptr<SS>>
+
+    auto dg7 = make_property(new int{ 17 }); // property<std::unique_ptr<int>>
+    auto dg8 = make_property(new SS); // property<std::unique_ptr<SS>>
+
+    auto dg9 = property{ v1.begin(), v1.end() }; // property<std::vector<int>>
+    auto dg10 = property{ m1.begin(), m1.end() }; // property<std::vector<std::pair<int, int>>>
+
+    auto dg11 = make_property(v1.begin(), v1.end()); // property<std::vector<int>>
+    auto dg12 = make_property(m1.begin(), m1.end()); // property<std::vector<std::pair<int, int>>>
+
+    if (&dg1 != &*dg1) throw std::logic_error("Bad pointer!");
+    if (&dg2 != &*dg2) throw std::logic_error("Bad pointer!");
+    if (&dg3 != &dg3.get()) throw std::logic_error("Bad pointer!");
+    if (&dg4 != &dg4.get()) throw std::logic_error("Bad pointer!");
+
+    if (&dg5 != dg5.get().get()) throw std::logic_error("Bad pointer!");
+    if (&dg6 != dg6.get().get()) throw std::logic_error("Bad pointer!");
+    if (&dg7 != dg7.get().get()) throw std::logic_error("Bad pointer!");
+    if (&dg8 != dg8.get().get()) throw std::logic_error("Bad pointer!");
+
+    strip(dg6).reset();
+    strip(dg8).reset();
 
     std::cout << "\nTHE END!\n";
 }
