@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "Property.hpp"
+#include "property.hpp"
 
 void foo(std::string& s) {}
 

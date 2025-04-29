@@ -174,7 +174,7 @@ public:
     [[nodiscard]] auto operator <=> (const U& other) const { return P::get() <=> other; }
 
     template<typename U> requires (not std::same_as<basic_property, std::remove_cvref_t<U>>)
-    [[nodiscard]] auto operator == (const U& other) const { return P::get() == other; }
+    [[nodiscard]] bool operator == (const U& other) const { return P::get() == other; }
 
 #if defined(DEFINE_PROPERTY_OPERATOR)
 #undef DEFINE_PROPERTY_OPERATOR
@@ -503,10 +503,10 @@ template<typename T, typename P>
             { return { lhs.get() OP rhs }; } \
     \
     template<typename U, typename T> requires (not std::same_as<std::remove_cvref_t<U>, PT<T>> \
-    and not std::same_as<std::remove_cvref_t<U>, std::ostream>  and not std::same_as<std::remove_cvref_t<U>, std::wostream> \
-    and not std::same_as<std::remove_cvref_t<U>, std::istream>  and not std::same_as<std::remove_cvref_t<U>, std::wistream>) \
+    and not std::same_as<std::remove_cvref_t<U>, std::ostream> and not std::same_as<std::remove_cvref_t<U>, std::wostream> \
+    and not std::same_as<std::remove_cvref_t<U>, std::istream> and not std::same_as<std::remove_cvref_t<U>, std::wistream>) \
     [[nodiscard]] auto operator OP (const U& lhs, const PT<T>& rhs) -> \
-        PT<std::invoke_result_t<decltype([](U x, T y) { return x OP y; }), U, T>> \
+        PT<decltype(std::declval<U>() OP std::declval<T>())> \
             { return { lhs OP rhs.get() }; }
 
 
