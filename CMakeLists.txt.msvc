@@ -1,0 +1,31 @@
+cmake_minimum_required(VERSION 3.0.0)
+
+set(CMAKE_TOOLCHAIN_FILE "C:/Code/vcpkg/scripts/buildsystems/vcpkg.cmake")
+
+project(blog VERSION 1.0
+	DESCRIPTION "Vorbrodt's C++ Playground"
+	HOMEPAGE_URL "https://vorbrodt.blog"
+	LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Default build type: Release" FORCE)
+endif()
+
+find_package(Threads           MODULE REQUIRED)
+find_package(TBB               CONFIG REQUIRED)
+find_package(ParallelSTL       CONFIG REQUIRED)
+find_package(Boost             COMPONENTS serialization program_options timer stacktrace_windbg filesystem system REQUIRED)
+
+include_directories("C:\\Code\\vcpkg\\installed\\x64-windows\\include")
+link_directories("C:\\Code\\vcpkg\\installed\\x64-windows\\lib")
+
+set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_THREAD_LIBS_INIT}")
+
+set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
+set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
+
+add_executable(playground playground.cpp)
