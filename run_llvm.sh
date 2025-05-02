@@ -9,3 +9,4 @@ rm -rf llvm 2> /dev/null
 mkdir llvm 2> /dev/null
 cd llvm
 cmake -DCMAKE_OSX_SYSROOT="$(xcrun --show-sdk-path)" ..
+cd ..

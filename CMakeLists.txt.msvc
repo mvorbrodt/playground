@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.0)
 
 set(CMAKE_TOOLCHAIN_FILE "C:/Code/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
-project(blog VERSION 1.0
+project(playground VERSION 1.0
 	DESCRIPTION "Vorbrodt's C++ Playground"
 	HOMEPAGE_URL "https://vorbrodt.blog"
 	LANGUAGES C CXX)
