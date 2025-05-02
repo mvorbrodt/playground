@@ -13,5 +13,5 @@ cmake -DCMAKE_TOOLCHAIN_FILE=C:/Code/vcpkg/scripts/buildsystems/vcpkg.cmake -DVC
 
 cd ..
 
-msbuild -m msvc/playground.sln -t:Rebuild -p:Configuration=Debug
-msbuild -m msvc/playground.sln -t:Rebuild -p:Configuration=Release
+REM msbuild -m msvc/playground.sln -t:Rebuild -p:Configuration=Debug
+REM msbuild -m msvc/playground.sln -t:Rebuild -p:Configuration=Release
