@@ -116,6 +116,7 @@ struct file_storage_property_policy
 
     file_storage_property_policy(const std::filesystem::path& path, const_reference value) : m_path(path) { set(value); }
 
+    template<typename U = T> requires (not std::same_as<U, std::string> and not std::same_as<U, std::wstring>)
     [[nodiscard]] value_type get() const
     {
         using in_char_t = typename std::ifstream::char_type;
@@ -130,6 +131,27 @@ struct file_storage_property_policy
         return value;
     }
 
+    template<typename U = T> requires (std::same_as<U, std::string> or std::same_as<U, std::wstring>)
+    [[nodiscard]] value_type get() const
+    {
+        using in_char_t = typename std::ifstream::char_type;
+
+        auto value = U{};
+        auto ifs = std::ifstream(m_path, std::ios_base::binary | std::ios_base::in | std::ios::ate);
+
+        ifs.exceptions(std::ios::failbit | std::ios::badbit);
+
+        auto bytes = ifs.tellg();
+        value.resize(bytes / sizeof(typename U::value_type));
+        ifs.seekg(0);
+
+        ifs.read(reinterpret_cast<in_char_t*>(value.data()), bytes);
+        ifs.close();
+
+        return value;
+    }
+
+    template<typename U = T> requires (not std::same_as<U, std::string> and not std::same_as<U, std::wstring>)
     void set(const_reference value)
     {
         using out_char_t = typename std::ofstream::char_type;
@@ -142,43 +164,7 @@ struct file_storage_property_policy
         ofs.close();
     }
 
-private:
-    std::filesystem::path m_path;
-};
-
-template<>
-struct file_storage_property_policy<std::string>
-{
-    using value_type = std::string;
-    using reference = value_type&;
-    using const_reference = const value_type&;
-    using rvalue_reference = value_type&&;
-    using pointer = value_type*;
-    using const_pointer = const value_type*;
-
-    explicit file_storage_property_policy(const std::filesystem::path& path) : m_path(path) {}
-
-    file_storage_property_policy(const std::filesystem::path& path, const_reference value) : m_path(path) { set(value); }
-
-    [[nodiscard]] value_type get() const
-    {
-        using in_char_t = typename std::ifstream::char_type;
-
-        auto value = std::string{};
-        auto ifs = std::ifstream(m_path, std::ios_base::binary | std::ios_base::in | std::ios::ate);
-
-        ifs.exceptions(std::ios::failbit | std::ios::badbit);
-
-        auto bytes = ifs.tellg();
-        value.resize(bytes);
-        ifs.seekg(0);
-
-        ifs.read(reinterpret_cast<in_char_t*>(value.data()), bytes);
-        ifs.close();
-
-        return value;
-    }
-
+    template<typename U = T> requires (std::same_as<U, std::string> or std::same_as<U, std::wstring>)
     void set(const_reference value)
     {
         using out_char_t = typename std::ofstream::char_type;
@@ -186,56 +172,7 @@ struct file_storage_property_policy<std::string>
         auto ofs = std::ofstream(m_path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
 
         ofs.exceptions(std::ios::failbit | std::ios::badbit);
-        ofs.write(reinterpret_cast<const out_char_t*>(value.data()), value.length());
-        ofs.flush();
-        ofs.close();
-    }
-
-private:
-    std::filesystem::path m_path;
-};
-
-template<>
-struct file_storage_property_policy<std::wstring>
-{
-    using value_type = std::wstring;
-    using reference = value_type&;
-    using const_reference = const value_type&;
-    using rvalue_reference = value_type&&;
-    using pointer = value_type*;
-    using const_pointer = const value_type*;
-
-    explicit file_storage_property_policy(const std::filesystem::path& path) : m_path(path) {}
-
-    file_storage_property_policy(const std::filesystem::path& path, const_reference value) : m_path(path) { set(value); }
-
-    [[nodiscard]] value_type get() const
-    {
-        using in_char_t = typename std::ifstream::char_type;
-
-        auto value = std::wstring{};
-        auto ifs = std::ifstream(m_path, std::ios_base::binary | std::ios_base::in | std::ios::ate);
-
-        ifs.exceptions(std::ios::failbit | std::ios::badbit);
-
-        auto bytes = ifs.tellg();
-        value.resize(bytes / sizeof(std::wstring::value_type));
-        ifs.seekg(0);
-
-        ifs.read(reinterpret_cast<in_char_t*>(value.data()), bytes);
-        ifs.close();
-
-        return value;
-    }
-
-    void set(const_reference value)
-    {
-        using out_char_t = typename std::ofstream::char_type;
-
-        auto ofs = std::ofstream(m_path, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
-
-        ofs.exceptions(std::ios::failbit | std::ios::badbit);
-        ofs.write(reinterpret_cast<const out_char_t*>(value.data()), value.length() * sizeof(std::wstring::value_type));
+        ofs.write(reinterpret_cast<const out_char_t*>(value.data()), value.length() * sizeof(typename U::value_type));
         ofs.flush();
         ofs.close();
     }
