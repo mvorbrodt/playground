@@ -82,9 +82,18 @@ int main()
     tmp2 = std::as_const(p2).invoke(&std::string::length);
     tmp3 = as_volatile(p3).invoke(&std::string::c_str);
 
-    p1.invoke(&std::string::resize, p1->size() + 3, '-');
-    p2.invoke(&std::string::resize, p2->size() + 5, '*');
-    //p3.invoke(&std::string::insert, p3->end(), 7, '='); // FIX ME~!!!!!111oneone
+    using Str = std::string;
+
+    void(Str::*mptr1)(Str::size_type, Str::value_type) = static_cast<void(Str::*)(Str::size_type, Str::value_type)>(&Str::resize);
+    p1.invoke(mptr1, p1->size() + 3, '-');
+    p2.invoke(mptr1, p2->size() + 5, '*');
+
+    Str::iterator(Str::*mptr2)(Str::const_iterator, Str::size_type, Str::value_type) = static_cast<Str::iterator(Str::*)(Str::const_iterator, Str::size_type, Str::value_type)>(&Str::insert);
+    p3.invoke(mptr2, p3->end(), 7, '=');
+
+    std::cout << p1 << std::endl;
+    std::cout << p2 << std::endl;
+    std::cout << p3 << std::endl;
 
     [[maybe_unused]] auto r1 = p1 == p2;
     [[maybe_unused]] auto r2 = p1 == p1;

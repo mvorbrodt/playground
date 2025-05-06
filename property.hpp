@@ -395,8 +395,6 @@ public:
     template<typename Func, typename... Args> requires (std::invocable<Func, T, Args...>)
     auto invoke(Func&& func, Args&&... args) -> std::invoke_result_t<Func, T, Args...>
     {
-        //using R = std::invoke_result_t<Func, T, Args...>; // FIX ME~!!!!!111oneone
-        //using PT = R(T::*)(Args...); // FIX ME~!!!!!111oneone
         return std::invoke(std::forward<Func>(func), P::get(), std::forward<Args>(args)...);
     }
 
